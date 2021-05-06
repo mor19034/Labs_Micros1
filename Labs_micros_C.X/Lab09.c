@@ -28,7 +28,7 @@
 #pragma config WRT = OFF        // Flash Program Memory Self Write Enable bits (Write protection off)
 
 #include <xc.h>// </editor-fold>
-//---------------------------dvalores definidos-----------------------------
+//--------------------------------valores definidos-----------------------------
 #define _XTAL_FREQ 8000000
 
 //---------------------------------prototipos-----------------------------------
