@@ -7,11 +7,21 @@
 # 1 "C:/Program Files/Microchip/MPLABX/v5.45/packs/Microchip/PIC16Fxxx_DFP/1.2.33/xc8\\pic\\include\\language_support.h" 1 3
 # 2 "<built-in>" 2
 # 1 "Lab10.c" 2
+# 13 "Lab10.c"
+#pragma config FOSC = INTRC_NOCLKOUT
+#pragma config WDTE = OFF
+#pragma config PWRTE = ON
+#pragma config MCLRE = OFF
+#pragma config CP = OFF
+#pragma config CPD = OFF
+#pragma config BOREN = OFF
+#pragma config IESO = OFF
+#pragma config FCMEN = OFF
+#pragma config LVP = ON
 
 
-
-
-
+#pragma config BOR4V = BOR40V
+#pragma config WRT = OFF
 
 
 # 1 "C:/Program Files/Microchip/MPLABX/v5.45/packs/Microchip/PIC16Fxxx_DFP/1.2.33/xc8\\pic\\include\\xc.h" 1 3
@@ -2494,7 +2504,7 @@ extern __bank0 unsigned char __resetbits;
 extern __bank0 __bit __powerdown;
 extern __bank0 __bit __timeout;
 # 28 "C:/Program Files/Microchip/MPLABX/v5.45/packs/Microchip/PIC16Fxxx_DFP/1.2.33/xc8\\pic\\include\\xc.h" 2 3
-# 8 "Lab10.c" 2
+# 28 "Lab10.c" 2
 
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdint.h" 1 3
 # 13 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdint.h" 3
@@ -2629,53 +2639,168 @@ typedef int16_t intptr_t;
 
 
 typedef uint16_t uintptr_t;
-# 9 "Lab10.c" 2
+# 29 "Lab10.c" 2
+
+# 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdio.h" 1 3
+
+
+
+# 1 "C:/Program Files/Microchip/MPLABX/v5.45/packs/Microchip/PIC16Fxxx_DFP/1.2.33/xc8\\pic\\include\\__size_t.h" 1 3
+
+
+
+typedef unsigned size_t;
+# 4 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdio.h" 2 3
+
+# 1 "C:/Program Files/Microchip/MPLABX/v5.45/packs/Microchip/PIC16Fxxx_DFP/1.2.33/xc8\\pic\\include\\__null.h" 1 3
+# 5 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdio.h" 2 3
 
 
 
 
 
 
-#pragma config FOSC = INTRC_NOCLKOUT
-#pragma config WDTE = OFF
-#pragma config PWRTE = ON
-#pragma config MCLRE = OFF
-#pragma config CP = OFF
-#pragma config CPD = OFF
-#pragma config BOREN = OFF
-#pragma config IESO = OFF
-#pragma config FCMEN = OFF
-#pragma config LVP = ON
+# 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdarg.h" 1 3
 
 
-#pragma config BOR4V = BOR40V
-#pragma config WRT = OFF
 
 
-const char var = 97;
+
+
+typedef void * va_list[1];
+
+#pragma intrinsic(__va_start)
+extern void * __va_start(void);
+
+#pragma intrinsic(__va_arg)
+extern void * __va_arg(void *, ...);
+# 11 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdio.h" 2 3
+# 43 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdio.h" 3
+struct __prbuf
+{
+ char * ptr;
+ void (* func)(char);
+};
+# 85 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdio.h" 3
+# 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\conio.h" 1 3
+
+
+
+
+
+
+
+# 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\errno.h" 1 3
+# 29 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\errno.h" 3
+extern int errno;
+# 8 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\conio.h" 2 3
+
+
+
+
+extern void init_uart(void);
+
+extern char getch(void);
+extern char getche(void);
+extern void putch(char);
+extern void ungetch(char);
+
+extern __bit kbhit(void);
+
+
+
+extern char * cgets(char *);
+extern void cputs(const char *);
+# 85 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdio.h" 2 3
+
+
+
+extern int cprintf(char *, ...);
+#pragma printf_check(cprintf)
+
+
+
+extern int _doprnt(struct __prbuf *, const register char *, register va_list);
+# 180 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdio.h" 3
+#pragma printf_check(vprintf) const
+#pragma printf_check(vsprintf) const
+
+extern char * gets(char *);
+extern int puts(const char *);
+extern int scanf(const char *, ...) __attribute__((unsupported("scanf() is not supported by this compiler")));
+extern int sscanf(const char *, const char *, ...) __attribute__((unsupported("sscanf() is not supported by this compiler")));
+extern int vprintf(const char *, va_list) __attribute__((unsupported("vprintf() is not supported by this compiler")));
+extern int vsprintf(char *, const char *, va_list) __attribute__((unsupported("vsprintf() is not supported by this compiler")));
+extern int vscanf(const char *, va_list ap) __attribute__((unsupported("vscanf() is not supported by this compiler")));
+extern int vsscanf(const char *, const char *, va_list) __attribute__((unsupported("vsscanf() is not supported by this compiler")));
+
+#pragma printf_check(printf) const
+#pragma printf_check(sprintf) const
+extern int sprintf(char *, const char *, ...);
+extern int printf(const char *, ...);
+# 30 "Lab10.c" 2
+
+
+
+
 
 
 
 void setup (void);
+void putch (char dato);
 
-void __attribute__((picinterrupt((""))))ioc(void){
+void cadena (void);
 
-    if(PIR1bits.RCIF){
-        PORTB = RCREG;
-    }
-}
+
+
 
 void main(void) {
     setup();
 
     while (1){
-
-        _delay((unsigned long)((500)*(8000000/4000.0)));
-
-        if (PIR1bits.TXIF){
-            TXREG = var;
+        cadena();
         }
     }
+
+
+void putch(char dato){
+    while(TXIF == 0);
+    TXREG = dato;
+    return;
+}
+
+void cadena(void){
+    _delay((unsigned long)((300)*(8000000/4000.0)));
+    printf("\r Escoge una opcion, chavo: \r");
+    _delay((unsigned long)((300)*(8000000/4000.0)));
+    printf("1. Desplegar cadena de caracteres: \r");
+    _delay((unsigned long)((300)*(8000000/4000.0)));
+    printf("2. Desplegar PORTA: \r");
+    _delay((unsigned long)((300)*(8000000/4000.0)));
+    printf("3. Desplegar PORTB: \r");
+
+    while (RCIF == 0);
+
+    if (RCREG == '1'){
+        _delay((unsigned long)((500)*(8000000/4000.0)));
+        printf("\r Que tas esperando? es lo unico que hago...UwU \r");
+    }
+    else if (RCREG == '2'){
+        printf("\r Insertar caracter para desplegar en PORTA: \r");
+        while (RCIF == 0);
+        PORTA = RCREG;
+    }
+    else if (RCREG == '3'){
+        printf("\r Insertar caracter para desplegar en PORTB: \r");
+        while (RCIF == 0);
+        PORTB = RCREG;
+    }
+    else{
+        _delay((unsigned long)((500)*(8000000/4000.0)));
+        printf("\r a mi se me hace que no se va a podeer...proba una opcion\r");
+        (0);
+    }
+    return;
 }
 
 void setup(void){
@@ -2683,10 +2808,10 @@ void setup(void){
     ANSEL = 0b00000000;
     ANSELH = 0;
 
-
+    TRISA = 0b00000000;
     TRISB = 0b00000000;
 
-
+    PORTA = 0X00;
     PORTB = 0x00;
 
 
@@ -2707,8 +2832,12 @@ void setup(void){
     TXSTAbits.TXEN = 1;
 
 
-    INTCONbits.PEIE = 1;
-    PIR1bits.RCIF = 0;
-    PIE1bits.RCIE = 1;
     INTCONbits.GIE = 1;
+    INTCONbits.PEIE = 1;
+
+    PIE1bits.RCIE = 1;
+    PIE1bits.TXIE = 1;
+
+    PIR1bits.TXIF = 0;
+    PIR1bits.RCIF = 0;
 }
