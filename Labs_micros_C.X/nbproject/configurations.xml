@@ -166,7 +166,7 @@
         <XC8-config-global>
         </XC8-config-global>
       </item>
-      <item path="Lab09.c" ex="false" overriding="false">
+      <item path="Lab09.c" ex="true" overriding="false">
         <HI-TECH-COMP>
         </HI-TECH-COMP>
         <HI-TECH-LINK>
@@ -177,6 +177,14 @@
         </XC8-config-global>
       </item>
       <item path="Lab10.c" ex="true" overriding="false">
+        <HI-TECH-COMP>
+        </HI-TECH-COMP>
+        <HI-TECH-LINK>
+        </HI-TECH-LINK>
+        <XC8-CO>
+        </XC8-CO>
+        <XC8-config-global>
+        </XC8-config-global>
       </item>
       <Simulator>
         <property key="codecoverage.enabled" value="Disable"/>
