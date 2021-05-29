@@ -2712,6 +2712,9 @@ extern __bank0 __bit __timeout;
 
 
 
+int N_timer0;
+int motores;
+int valor_ADC;
 
 void setup (void);
 
@@ -2720,15 +2723,31 @@ void __attribute__((picinterrupt((""))))interrupcion(void){
 
     if(ADIF == 1){
       if(ADCON0bits.CHS == 0){
-          CCPR2L = (ADRESH>>1)+125;
-          CCPR1L = (ADRESH>>1)+125;
+            CCPR1L = (ADRESH>>1)+125;
         }
-
-
-
-
-      PIR1bits.ADIF = 0;
+        else if(ADCON0bits.CHS == 1) {
+            CCPR2L = (ADRESH>>1)+125;
+        }
+        else if (ADCON0bits.CHS == 2){
+           valor_ADC = ADRESH;
+        }
+        PIR1bits.ADIF = 0;
     }
+
+
+if (INTCONbits.T0IF == 1){
+    motores++;
+   if (motores >= valor_ADC){
+       RD0 = 0;
+       RD1 = 0;
+   }
+   else{
+       RD0 = 1;
+       RD1 = 1;
+   }
+   if (motores == 255){motores = 0;}
+   INTCONbits.T0IF = 0;
+}
     return;
 }
 
@@ -2747,9 +2766,6 @@ void main (void) {
                 ADCON0bits.CHS = 2;
             }
             else if (ADCON0bits.CHS == 2){
-                ADCON0bits.CHS = 3;
-            }
-            else {
                 ADCON0bits.CHS = 0;
             }
             _delay((unsigned long)((100)*(8000000/4000000.0)));
@@ -2805,7 +2821,10 @@ void setup (void){
     PIR1bits.ADIF = 0;
     PIE1bits.ADIE = 1;
     INTCONbits.PEIE = 1;
+    INTCONbits.T0IE = 1;
+    INTCONbits.T0IF = 0;
     INTCONbits.GIE = 1;
+
 
 
     PIR1bits.TMR2IF = 0;
@@ -2818,7 +2837,10 @@ void setup (void){
 
     TRISCbits.TRISC1 = 0;
     TRISCbits.TRISC2 = 0;
-}
-void motor1 (void){
 
+
+    OPTION_REGbits.T0CS = 0;
+    OPTION_REGbits.PSA = 0;
+    OPTION_REGbits.PS = 0b011;
+    TMR0 = 246;
 }
