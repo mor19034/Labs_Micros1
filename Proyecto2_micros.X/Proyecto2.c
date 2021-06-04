@@ -40,10 +40,14 @@ char lectura1;
 char lectura2;
 char var1;
 char var2;
+char bandera;
 //---------------------------------prototipos-----------------------------------
 void setup (void);
 void escribir (char dato, char localidad);
 char leer (char localidad);
+void putch (char valor); //función para recibir dato que se manda -caracter por
+//caracter-
+void terminal (void); //función para desplegar texto en pantalla
 //-------------------------------interrupciones---------------------------------
 void __interrupt()interrupcion(void){
   
@@ -100,6 +104,15 @@ if (RBIF == 1){ //revisar si se toca algún botón
         __delay_ms(2000); //lo muestra por 2 segundos y regresa.
         ADCON0bits.ADON = 1;
     }
+    else if (PORTBbits.RB5 == 0){ //esto sirve como seguridad para EEUSART
+        //nos va a permitir para encenderla y apagarla, sino muere el codigo
+        if (bandera == 0){
+          bandera = 1;  
+        }
+        else {
+            bandera = 0;
+        }
+    }
     else { //cuando se salga de grabar o leer se apagan los leds
       PORTEbits.RE0 = 0; //los leds siempre están apagados
       PORTEbits.RE1 = 0;
@@ -114,23 +127,28 @@ void main (void) {
     ADCON0bits.GO = 1; //se empieza la conversión   
      
     while (1){ 
+        if (bandera == 1){
+            terminal(); 
+        }
         //esto sirve par el cambio de canales
-        if (ADCON0bits.GO == 0){    //revisar si se empieza conversion
-            if (ADCON0bits.CHS == 0){ //si esta en canal 0, cambiamos a 1
+        else {
+            if (ADCON0bits.GO == 0){    //revisar si se empieza conversion
+                if (ADCON0bits.CHS == 0){ //si esta en canal 0, cambiamos a 1
                 ADCON0bits.CHS = 1;
-            }
-            else if (ADCON0bits.CHS == 1){
-                ADCON0bits.CHS = 2;
-            }
-            else if (ADCON0bits.CHS == 2){
-                ADCON0bits.CHS = 0;
-            }
-            __delay_us(100);    //delay para hacer cambio de canal
-            ADCON0bits.GO = 1;  //se comienza otra conversión
+                }
+                else if (ADCON0bits.CHS == 1){
+                    ADCON0bits.CHS = 2;
+                }
+                else if (ADCON0bits.CHS == 2){
+                    ADCON0bits.CHS = 0;
+                }
+                __delay_us(100);    //delay para hacer cambio de canal
+                ADCON0bits.GO = 1;  //se comienza otra conversión
         }
     }
 }
-
+    return;
+}
 //-----------------------------------configuracion------------------------------
 void setup (void){
     //Estabalecer que puertos vamos a usar 
@@ -138,7 +156,7 @@ void setup (void){
     ANSELH= 0;
     
     TRISA = 0b00001111;     //Primeros cuatro pines de puerto A como entrada 
-    TRISB = 0b11000000;     //Puerto B, ultimos pines como entrada
+    TRISB = 0b11100000;     //Puerto B, ultimos pines como entrada
     TRISC = 0b00000000;     //Puerto C como salida
     TRISD = 0b00000000;     //Puerto D como salida   
     TRISE = 0b000;          //
@@ -157,9 +175,10 @@ void setup (void){
     OPTION_REGbits.nRBPU=0;  //Habilitar weak pull-up de puerto B
     WPUBbits.WPUB6 = 1;     //weak pull-ups de últimos dos pines en B
     WPUBbits.WPUB7 = 1;
+    WPUBbits.WPUB5 = 1;
     IOCBbits.IOCB6 = 1;     //Habilitar interrupciones en puertos
     IOCBbits.IOCB7 = 1;
- 
+    IOCBbits.IOCB5 = 1;
     
     //Configuracion ADC
     ADCON1bits.ADFM = 0; //Leer bits más significativos; justificado izquierda
@@ -193,6 +212,13 @@ void setup (void){
     INTCONbits.RBIF = 1;
     INTCONbits.GIE = 1;
     
+//    //Interrupciones de transmisión recepción activadas
+//    PIE1bits.RCIE = 1;
+//    PIE1bits.TXIE = 1;
+//    //banderas de transmisión y recepción se bajan
+//    PIR1bits.TXIF = 0; 
+//    PIR1bits.RCIF = 0; 
+    
     
     //Configuración TMR2
     PIR1bits.TMR2IF = 0;    //bajar bandera de timer2
@@ -211,7 +237,25 @@ void setup (void){
     OPTION_REGbits.PSA = 0; //incrementar en flanco positivo de reloj
     OPTION_REGbits.PS = 0b011; //preescalar de 16
     TMR0 = 246; 
+    
+    //Configurasión comunicación serial
+    TXSTAbits.SYNC  = 0;    //Modo asincrono
+    TXSTAbits.BRGH  = 1;    //Tranmision de datos a alta velocidad
+    
+    BAUDCTLbits.BRG16   = 1;
+    
+    SPBRG   = 207;  //Baud rate de 9600
+    SPBRGH  = 0;
+    
+    RCSTAbits.SPEN  = 1;    //Se activan los puertos seriales
+    RCSTAbits.RX9   = 0; 
+    RCSTAbits.CREN  = 1;    //Se enciende la recepción continua
+    
+    TXSTAbits.TXEN  = 1;    //Se activa la transmición
+    
 }
+//------------------------------------funciones---------------------------------
+//----------------------------escribir en la EPPROM-----------------------------
 void escribir (char dato, char localidad){
     EEADR = localidad;  
     EEDAT = dato;  
@@ -231,10 +275,142 @@ void escribir (char dato, char localidad){
     
     EECON1bits.WREN = 0; //seguro para evitar escritura 
 }
+//------------------------------leer EEPROM-------------------------------------
 char leer (char localidad){
-    EEADR = localidad;
-    EECON1bits.EEPGD = 0;
-    EECON1bits.RD = 1;
-    char dato = EEDAT;
+    EEADR = localidad; //esto dice que localidad se leerá
+    EECON1bits.EEPGD = 0; //se apunta hacia la memoria 
+    EECON1bits.RD = 1; //se habilita la lectura
+    char dato = EEDAT; //lo que esta en la memoria se va a la variable
     return dato;
+}
+//--------------------------------comunicacion serial---------------------------
+//función de librería de stdio.h
+void putch(char valor){ 
+    while(TXIF == 0);
+    TXREG = valor; //lo que se escribe se manda al pic para que lo procese 
+    return; 
+}
+//Función para las cadenas
+void terminal(void){
+    __delay_ms(300); //delay en lo para desplegar los caraacteres
+    printf("\r Escoge una opcion, chavo: \r");
+    __delay_ms(300);
+    printf(" (1) Controlar motores: \r");
+    __delay_ms(300);
+    printf(" (2) ya no, ya no quiero hacer nada UnU: \r");
+    
+    while (RCIF == 0); //Se revisa el dato recibido
+    // Opciones del menú
+    
+    if (RCREG == '1') { //
+        __delay_ms(00);
+        printf("\r\rQue motor desea controlar:");
+        __delay_ms(100);
+        printf("\r\r (1)Giro");
+        __delay_ms(100);
+        printf("\r\r (2)Modo del aleron");
+        __delay_ms(100);
+        printf("\r\r (3) Nitro, la velocidad pues");
+        
+        while (RCIF == 0);  //Esperamos a que el usuario ingrese un dato
+        
+        if (RCREG == '1') {
+            __delay_ms(00);
+            printf("\r\r pa donde queres girar?:");
+            __delay_ms(100);
+            printf("\r\r (a)Derecha");
+            __delay_ms(100);
+            printf("\r\r (b)Izquierda");
+            __delay_ms(100);
+            printf("\r\r (c)Centro");
+            
+            while (RCIF == 0);  //Esperamos a que el usuario ingrese un dato
+            
+            if (RCREG == 'a') {
+                CCPR1L = (250 >> 1) + 125;
+            }
+            
+            else if (RCREG == 'b') {
+                CCPR1L = (0 >> 1) + 125;
+            }
+            
+            else if (RCREG == 'c') {
+                CCPR1L = (127 >> 1) + 125;
+            }
+            
+            else {
+                NULL;
+            }   
+        }
+        
+        if (RCREG == '2') {
+            __delay_ms(00);
+            printf("\r\r modo del aleron:");
+            __delay_ms(100);
+            printf("\r\r (a) carrera");
+            __delay_ms(100);
+            printf("\r\r (b) frando");
+            __delay_ms(100);
+            printf("\r\r (c) normal");
+            
+            while (RCIF == 0);  //Esperamos a que el usuario ingrese un dato
+            
+            if (RCREG == 'a') {
+                CCPR2L = (250 >> 1) + 125;
+            }
+            
+            else if (RCREG == 'b') {
+                CCPR2L = (0 >> 1) + 125;
+            }
+            
+            else if (RCREG == 'c') {
+                CCPR2L = (127 >> 1) + 125;
+            }
+            
+            else {
+                NULL;
+            }   
+        }
+        
+        if (RCREG == '3') {
+            __delay_ms(00);
+            printf("\r\r Que velocidad quiere?:");
+            __delay_ms(100);
+            printf("\r\r (a) rapidos y furiosos");
+            __delay_ms(100);
+            printf("\r\r (b) jue madre, frenar");
+            __delay_ms(100);
+            printf("\r\r (c)meh, normal");
+            
+            while (RCIF == 0);  //Esperamos a que el usuario ingrese un dato
+            
+            if (RCREG == 'a') {
+                valor_ADC = 255;
+            }
+            
+            else if (RCREG == 'b') {
+                valor_ADC = 0;
+            }
+            
+            else if (RCREG == 'c') {
+                valor_ADC = 127;
+            }
+            
+            else {
+                NULL;
+            }   
+        }
+        
+    }
+    
+    else if (RCREG == '2') {    //Si presionamos dos enviamos un caracter a PORTB
+        __delay_ms(500);    //Preguntamos el caracter
+        printf("\r\rAdios choripan\r");
+        bandera = 0;
+    } 
+    
+    else {  //Si el usuario presiona cualquier otro caracter no sucede nada
+        NULL; 
+    }
+    return;
 }

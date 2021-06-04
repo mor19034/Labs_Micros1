@@ -2721,10 +2721,14 @@ char lectura1;
 char lectura2;
 char var1;
 char var2;
+char bandera;
 
 void setup (void);
 void escribir (char dato, char localidad);
 char leer (char localidad);
+void putch (char valor);
+
+void terminal (void);
 
 void __attribute__((picinterrupt((""))))interrupcion(void){
 
@@ -2781,6 +2785,15 @@ if (RBIF == 1){
         _delay((unsigned long)((2000)*(8000000/4000.0)));
         ADCON0bits.ADON = 1;
     }
+    else if (PORTBbits.RB5 == 0){
+
+        if (bandera == 0){
+          bandera = 1;
+        }
+        else {
+            bandera = 0;
+        }
+    }
     else {
       PORTEbits.RE0 = 0;
       PORTEbits.RE1 = 0;
@@ -2795,23 +2808,28 @@ void main (void) {
     ADCON0bits.GO = 1;
 
     while (1){
+        if (bandera == 1){
+            terminal();
+        }
 
-        if (ADCON0bits.GO == 0){
-            if (ADCON0bits.CHS == 0){
+        else {
+            if (ADCON0bits.GO == 0){
+                if (ADCON0bits.CHS == 0){
                 ADCON0bits.CHS = 1;
-            }
-            else if (ADCON0bits.CHS == 1){
-                ADCON0bits.CHS = 2;
-            }
-            else if (ADCON0bits.CHS == 2){
-                ADCON0bits.CHS = 0;
-            }
-            _delay((unsigned long)((100)*(8000000/4000000.0)));
-            ADCON0bits.GO = 1;
+                }
+                else if (ADCON0bits.CHS == 1){
+                    ADCON0bits.CHS = 2;
+                }
+                else if (ADCON0bits.CHS == 2){
+                    ADCON0bits.CHS = 0;
+                }
+                _delay((unsigned long)((100)*(8000000/4000000.0)));
+                ADCON0bits.GO = 1;
         }
     }
 }
-
+    return;
+}
 
 void setup (void){
 
@@ -2819,7 +2837,7 @@ void setup (void){
     ANSELH= 0;
 
     TRISA = 0b00001111;
-    TRISB = 0b11000000;
+    TRISB = 0b11100000;
     TRISC = 0b00000000;
     TRISD = 0b00000000;
     TRISE = 0b000;
@@ -2838,9 +2856,10 @@ void setup (void){
     OPTION_REGbits.nRBPU=0;
     WPUBbits.WPUB6 = 1;
     WPUBbits.WPUB7 = 1;
+    WPUBbits.WPUB5 = 1;
     IOCBbits.IOCB6 = 1;
     IOCBbits.IOCB7 = 1;
-
+    IOCBbits.IOCB5 = 1;
 
 
     ADCON1bits.ADFM = 0;
@@ -2873,9 +2892,7 @@ void setup (void){
     INTCONbits.RBIE = 1;
     INTCONbits.RBIF = 1;
     INTCONbits.GIE = 1;
-
-
-
+# 224 "Proyecto2.c"
     PIR1bits.TMR2IF = 0;
     T2CONbits.T2CKPS = 0b11;
     T2CONbits.TMR2ON = 1;
@@ -2892,7 +2909,25 @@ void setup (void){
     OPTION_REGbits.PSA = 0;
     OPTION_REGbits.PS = 0b011;
     TMR0 = 246;
+
+
+    TXSTAbits.SYNC = 0;
+    TXSTAbits.BRGH = 1;
+
+    BAUDCTLbits.BRG16 = 1;
+
+    SPBRG = 207;
+    SPBRGH = 0;
+
+    RCSTAbits.SPEN = 1;
+    RCSTAbits.RX9 = 0;
+    RCSTAbits.CREN = 1;
+
+    TXSTAbits.TXEN = 1;
+
 }
+
+
 void escribir (char dato, char localidad){
     EEADR = localidad;
     EEDAT = dato;
@@ -2912,10 +2947,142 @@ void escribir (char dato, char localidad){
 
     EECON1bits.WREN = 0;
 }
+
 char leer (char localidad){
     EEADR = localidad;
     EECON1bits.EEPGD = 0;
     EECON1bits.RD = 1;
     char dato = EEDAT;
     return dato;
+}
+
+
+void putch(char valor){
+    while(TXIF == 0);
+    TXREG = valor;
+    return;
+}
+
+void terminal(void){
+    _delay((unsigned long)((300)*(8000000/4000.0)));
+    printf("\r Escoge una opcion, chavo: \r");
+    _delay((unsigned long)((300)*(8000000/4000.0)));
+    printf(" (1) Controlar motores: \r");
+    _delay((unsigned long)((300)*(8000000/4000.0)));
+    printf(" (2) ya no, ya no quiero hacer nada UnU: \r");
+
+    while (RCIF == 0);
+
+
+    if (RCREG == '1') {
+        _delay((unsigned long)((00)*(8000000/4000.0)));
+        printf("\r\rQue motor desea controlar:");
+        _delay((unsigned long)((100)*(8000000/4000.0)));
+        printf("\r\r (1)Giro");
+        _delay((unsigned long)((100)*(8000000/4000.0)));
+        printf("\r\r (2)Modo del aleron");
+        _delay((unsigned long)((100)*(8000000/4000.0)));
+        printf("\r\r (3) Nitro, la velocidad pues");
+
+        while (RCIF == 0);
+
+        if (RCREG == '1') {
+            _delay((unsigned long)((00)*(8000000/4000.0)));
+            printf("\r\r pa donde queres girar?:");
+            _delay((unsigned long)((100)*(8000000/4000.0)));
+            printf("\r\r (a)Derecha");
+            _delay((unsigned long)((100)*(8000000/4000.0)));
+            printf("\r\r (b)Izquierda");
+            _delay((unsigned long)((100)*(8000000/4000.0)));
+            printf("\r\r (c)Centro");
+
+            while (RCIF == 0);
+
+            if (RCREG == 'a') {
+                CCPR1L = (250 >> 1) + 125;
+            }
+
+            else if (RCREG == 'b') {
+                CCPR1L = (0 >> 1) + 125;
+            }
+
+            else if (RCREG == 'c') {
+                CCPR1L = (127 >> 1) + 125;
+            }
+
+            else {
+                (0);
+            }
+        }
+
+        if (RCREG == '2') {
+            _delay((unsigned long)((00)*(8000000/4000.0)));
+            printf("\r\r modo del aleron:");
+            _delay((unsigned long)((100)*(8000000/4000.0)));
+            printf("\r\r (a) carrera");
+            _delay((unsigned long)((100)*(8000000/4000.0)));
+            printf("\r\r (b) frando");
+            _delay((unsigned long)((100)*(8000000/4000.0)));
+            printf("\r\r (c) normal");
+
+            while (RCIF == 0);
+
+            if (RCREG == 'a') {
+                CCPR2L = (250 >> 1) + 125;
+            }
+
+            else if (RCREG == 'b') {
+                CCPR2L = (0 >> 1) + 125;
+            }
+
+            else if (RCREG == 'c') {
+                CCPR2L = (127 >> 1) + 125;
+            }
+
+            else {
+                (0);
+            }
+        }
+
+        if (RCREG == '3') {
+            _delay((unsigned long)((00)*(8000000/4000.0)));
+            printf("\r\r Que velocidad quiere?:");
+            _delay((unsigned long)((100)*(8000000/4000.0)));
+            printf("\r\r (a) rapidos y furiosos");
+            _delay((unsigned long)((100)*(8000000/4000.0)));
+            printf("\r\r (b) jue madre, frenar");
+            _delay((unsigned long)((100)*(8000000/4000.0)));
+            printf("\r\r (c)meh, normal");
+
+            while (RCIF == 0);
+
+            if (RCREG == 'a') {
+                valor_ADC = 255;
+            }
+
+            else if (RCREG == 'b') {
+                valor_ADC = 0;
+            }
+
+            else if (RCREG == 'c') {
+                valor_ADC = 127;
+            }
+
+            else {
+                (0);
+            }
+        }
+
+    }
+
+    else if (RCREG == '2') {
+        _delay((unsigned long)((500)*(8000000/4000.0)));
+        printf("\r\rAdios choripan\r");
+        bandera = 0;
+    }
+
+    else {
+        (0);
+    }
+    return;
 }
