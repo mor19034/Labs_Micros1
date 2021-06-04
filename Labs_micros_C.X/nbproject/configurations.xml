@@ -16,6 +16,7 @@
       <itemPath>Lab08.c</itemPath>
       <itemPath>Lab09.c</itemPath>
       <itemPath>Lab10.c</itemPath>
+      <itemPath>prebas.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -664,6 +665,8 @@
         <property key="user-pack-device-support" value=""/>
         <property key="wpo-lto" value="false"/>
       </XC8-config-global>
+      <item path="prebas.c" ex="true" overriding="false">
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>

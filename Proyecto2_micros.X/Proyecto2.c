@@ -34,18 +34,28 @@
 int N_timer0;
 int motores;
 int valor_ADC;
+char dato;
+char localidad;
+char lectura1;
+char lectura2;
+char var1;
+char var2;
 //---------------------------------prototipos-----------------------------------
 void setup (void);
+void escribir (char dato, char localidad);
+char leer (char localidad);
 //-------------------------------interrupciones---------------------------------
 void __interrupt()interrupcion(void){
   
 //-----------------------------iterrupcion ADC    
     if(ADIF == 1){ //revisa si hay interrupcion en ADC
       if(ADCON0bits.CHS == 0){
-            CCPR1L = (ADRESH>>1)+125;
+          var1 = ADRESH;
+          CCPR1L = (var1 >> 1)+125;
         }
         else if(ADCON0bits.CHS == 1) {
-            CCPR2L = (ADRESH>>1)+125;
+            var2 = ADRESH;
+            CCPR2L = (var2 >> 1)+125;
         }
         else if (ADCON0bits.CHS == 2){
            valor_ADC = ADRESH;
@@ -64,10 +74,38 @@ if (INTCONbits.T0IF == 1){
        RD0 = 1;
        RD1 = 1; 
    }
-   if (motores == 255){motores = 0;} //cuando en angulo llegue a su maximo  
+   if (motores == 255){
+       motores = 0;} //cuando en angulo llegue a su maximo  
    INTCONbits.T0IF = 0;
 }
-    return;
+//------------------------interrupción Puerto B
+if (RBIF == 1){ //revisar si se toca algún botón
+    if (PORTBbits.RB6 == 0){ //revisar si se toca boton de escritura
+        PORTEbits.RE0 = 1; //se enciede led de grabado
+        
+        escribir(var1, 0x17);
+        escribir(var2, 0x18);
+        
+        __delay_ms(250); //
+    }
+    else if (PORTBbits.RB7 == 0){ //si presiono primer botón -reproducción-
+        ADCON0bits.ADON = 0; 
+        PORTEbits.RE1 = 1; //led que indica que se inicio la lectura
+        lectura1 = leer (0x17);
+        lectura2 = leer (0x18);
+        
+        CCPR1L = (lectura1 >> 1)+125;
+        CCPR2L = (lectura2 >> 1)+125;
+        
+        __delay_ms(2000); //lo muestra por 2 segundos y regresa.
+        ADCON0bits.ADON = 1;
+    }
+    else { //cuando se salga de grabar o leer se apagan los leds
+      PORTEbits.RE0 = 0; //los leds siempre están apagados
+      PORTEbits.RE1 = 0;
+    }
+    INTCONbits.RBIF = 0; //bajar la bandera 
+}    
 }
 
 //-------------------------------loop principal---------------------------------
@@ -100,19 +138,28 @@ void setup (void){
     ANSELH= 0;
     
     TRISA = 0b00001111;     //Primeros cuatro pines de puerto A como entrada 
-    TRISB = 0b00000000;     //Puerto B como salida
+    TRISB = 0b11000000;     //Puerto B, ultimos pines como entrada
     TRISC = 0b00000000;     //Puerto C como salida
-    TRISD = 0b00000000;     //Puerto D como salida    
+    TRISD = 0b00000000;     //Puerto D como salida   
+    TRISE = 0b000;          //
     
     PORTA = 0X00;           //Limpiar puertos
     PORTB = 0X00;
     PORTC = 0X00;
     PORTD = 0X00;
+    PORTE = 0x00;
     
     //configuracion de reloj
     OSCCONbits.SCS = 1;     //RELOJ INTERNO
     OSCCONbits.IRCF = 0b111;   //OSCILADOR DE 8MHz 111
     
+    //CONFIGURACION DE PUERTO B
+    OPTION_REGbits.nRBPU=0;  //Habilitar weak pull-up de puerto B
+    WPUBbits.WPUB6 = 1;     //weak pull-ups de últimos dos pines en B
+    WPUBbits.WPUB7 = 1;
+    IOCBbits.IOCB6 = 1;     //Habilitar interrupciones en puertos
+    IOCBbits.IOCB7 = 1;
+ 
     
     //Configuracion ADC
     ADCON1bits.ADFM = 0; //Leer bits más significativos; justificado izquierda
@@ -142,6 +189,8 @@ void setup (void){
     INTCONbits.PEIE = 1;  //activar interrupciones perifericas
     INTCONbits.T0IE = 1;  //habilitar interrupcion de timer0
     INTCONbits.T0IF = 0; //limpiar bandera de tmr0
+    INTCONbits.RBIE = 1; 
+    INTCONbits.RBIF = 1;
     INTCONbits.GIE = 1;
     
     
@@ -162,4 +211,30 @@ void setup (void){
     OPTION_REGbits.PSA = 0; //incrementar en flanco positivo de reloj
     OPTION_REGbits.PS = 0b011; //preescalar de 16
     TMR0 = 246; 
+}
+void escribir (char dato, char localidad){
+    EEADR = localidad;  
+    EEDAT = dato;  
+    
+    INTCONbits.GIE = 0; //apagar las interrupciones globales
+    
+    EECON1bits.EEPGD = 0; //puntero para DATA memory
+    EECON1bits.WREN = 1; //Se habilita escribir en la memoria
+    
+    EECON2 = 0x55;
+    EECON2 = 0xAA;
+    
+    EECON1bits.WR = 1; //se inicia el ciclo de escritura
+    
+    while(PIR2bits.EEIF == 0);
+    PIR2bits.EEIF = 0;
+    
+    EECON1bits.WREN = 0; //seguro para evitar escritura 
+}
+char leer (char localidad){
+    EEADR = localidad;
+    EECON1bits.EEPGD = 0;
+    EECON1bits.RD = 1;
+    char dato = EEDAT;
+    return dato;
 }

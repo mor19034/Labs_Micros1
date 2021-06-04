@@ -2715,18 +2715,28 @@ extern __bank0 __bit __timeout;
 int N_timer0;
 int motores;
 int valor_ADC;
+char dato;
+char localidad;
+char lectura1;
+char lectura2;
+char var1;
+char var2;
 
 void setup (void);
+void escribir (char dato, char localidad);
+char leer (char localidad);
 
 void __attribute__((picinterrupt((""))))interrupcion(void){
 
 
     if(ADIF == 1){
       if(ADCON0bits.CHS == 0){
-            CCPR1L = (ADRESH>>1)+125;
+          var1 = ADRESH;
+          CCPR1L = (var1 >> 1)+125;
         }
         else if(ADCON0bits.CHS == 1) {
-            CCPR2L = (ADRESH>>1)+125;
+            var2 = ADRESH;
+            CCPR2L = (var2 >> 1)+125;
         }
         else if (ADCON0bits.CHS == 2){
            valor_ADC = ADRESH;
@@ -2745,10 +2755,38 @@ if (INTCONbits.T0IF == 1){
        RD0 = 1;
        RD1 = 1;
    }
-   if (motores == 255){motores = 0;}
+   if (motores == 255){
+       motores = 0;}
    INTCONbits.T0IF = 0;
 }
-    return;
+
+if (RBIF == 1){
+    if (PORTBbits.RB6 == 0){
+        PORTEbits.RE0 = 1;
+
+        escribir(var1, 0x17);
+        escribir(var2, 0x18);
+
+        _delay((unsigned long)((250)*(8000000/4000.0)));
+    }
+    else if (PORTBbits.RB7 == 0){
+        ADCON0bits.ADON = 0;
+        PORTEbits.RE1 = 1;
+        lectura1 = leer (0x17);
+        lectura2 = leer (0x18);
+
+        CCPR1L = (lectura1 >> 1)+125;
+        CCPR2L = (lectura2 >> 1)+125;
+
+        _delay((unsigned long)((2000)*(8000000/4000.0)));
+        ADCON0bits.ADON = 1;
+    }
+    else {
+      PORTEbits.RE0 = 0;
+      PORTEbits.RE1 = 0;
+    }
+    INTCONbits.RBIF = 0;
+}
 }
 
 
@@ -2781,18 +2819,27 @@ void setup (void){
     ANSELH= 0;
 
     TRISA = 0b00001111;
-    TRISB = 0b00000000;
+    TRISB = 0b11000000;
     TRISC = 0b00000000;
     TRISD = 0b00000000;
+    TRISE = 0b000;
 
     PORTA = 0X00;
     PORTB = 0X00;
     PORTC = 0X00;
     PORTD = 0X00;
+    PORTE = 0x00;
 
 
     OSCCONbits.SCS = 1;
     OSCCONbits.IRCF = 0b111;
+
+
+    OPTION_REGbits.nRBPU=0;
+    WPUBbits.WPUB6 = 1;
+    WPUBbits.WPUB7 = 1;
+    IOCBbits.IOCB6 = 1;
+    IOCBbits.IOCB7 = 1;
 
 
 
@@ -2823,6 +2870,8 @@ void setup (void){
     INTCONbits.PEIE = 1;
     INTCONbits.T0IE = 1;
     INTCONbits.T0IF = 0;
+    INTCONbits.RBIE = 1;
+    INTCONbits.RBIF = 1;
     INTCONbits.GIE = 1;
 
 
@@ -2843,4 +2892,30 @@ void setup (void){
     OPTION_REGbits.PSA = 0;
     OPTION_REGbits.PS = 0b011;
     TMR0 = 246;
+}
+void escribir (char dato, char localidad){
+    EEADR = localidad;
+    EEDAT = dato;
+
+    INTCONbits.GIE = 0;
+
+    EECON1bits.EEPGD = 0;
+    EECON1bits.WREN = 1;
+
+    EECON2 = 0x55;
+    EECON2 = 0xAA;
+
+    EECON1bits.WR = 1;
+
+    while(PIR2bits.EEIF == 0);
+    PIR2bits.EEIF = 0;
+
+    EECON1bits.WREN = 0;
+}
+char leer (char localidad){
+    EEADR = localidad;
+    EECON1bits.EEPGD = 0;
+    EECON1bits.RD = 1;
+    char dato = EEDAT;
+    return dato;
 }
